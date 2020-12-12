@@ -1,0 +1,4 @@
+bind_addr=":8080"
+log_level="debug"
+database_url="host=localhost dbname=goblog password=Skor2001 sslmode=disable"
+session_key="539b5c4c92035f3536c41277f5563f9019c201927761f87ba7b3f5bdbc210ca2b1df522531b65e953992ab7a41be4c54481a283cdc0f2aa2da1a62d7ff582d18"

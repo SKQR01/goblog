@@ -2,15 +2,18 @@ package apiserver
 
 import (
 	"database/sql"
-	"github.com/SKQR01/goblog/internal/app/store/sqlstore"
-	"github.com/gorilla/sessions"
 	"net/http"
+
+	"github.com/gorilla/sessions"
+
+	"github.com/SKQR01/goblog/internal/app/store/sqlstore"
 )
 
+//Start ...
 func Start(config *Config) error {
 	db, err := newDB(config.DatabaseURL)
-	if err != nil{
-		return nil
+	if err != nil {
+		return err
 	}
 
 	defer db.Close()
@@ -28,7 +31,7 @@ func newDB(databasURL string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err := db.Ping(); err !=nil{
+	if err := db.Ping(); err != nil {
 		return nil, err
 	}
 

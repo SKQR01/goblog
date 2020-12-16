@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/SKQR01/goblog/internal/app/model"
-	"github.com/SKQR01/goblog/internal/app/store/teststore"
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/sessions"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/SKQR01/goblog/internal/app/model"
+	"github.com/SKQR01/goblog/internal/app/store/teststore"
 )
 
 func TestServer_AuthenticateUser(t *testing.T) {
@@ -41,7 +43,7 @@ func TestServer_AuthenticateUser(t *testing.T) {
 	secretKey := []byte("secret")
 	s := newServer(store, sessions.NewCookieStore(secretKey))
 	sc := securecookie.New(secretKey, nil)
-	mw := s.handleAuthenticateUser(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mw := s.authenticateUser(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 

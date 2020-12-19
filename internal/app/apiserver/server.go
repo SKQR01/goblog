@@ -1,19 +1,23 @@
 package apiserver
 
+//Abstract server in a common implementation.
+
 import (
-	"github.com/SKQR01/goblog/internal/app/store"
+	"net/http"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
-	"net/http"
+
+	"github.com/SKQR01/goblog/internal/app/store"
 )
 
 type server struct {
 	router *mux.Router
 	logger *logrus.Logger
 	//TODO:понять почему так, а не *store.Store
-	store store.Store
+	store        store.Store
 	sessionStore sessions.Store
 }
 
@@ -36,13 +40,11 @@ func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func newServer(store store.Store, sessionsStore sessions.Store) *server {
 	srv := &server{
-		router: mux.NewRouter(),
-		logger: logrus.New(),
-		store:  store,
+		router:       mux.NewRouter(),
+		logger:       logrus.New(),
+		store:        store,
 		sessionStore: sessionsStore,
 	}
 	srv.configureRouter()
 	return srv
 }
-
-

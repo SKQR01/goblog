@@ -1,11 +1,14 @@
 package model_test
 
 import (
-	"github.com/SKQR01/goblog/internal/app/model"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/SKQR01/goblog/internal/app/model"
 )
 
+//TestUser_BeforeCreate 
 func TestUser_BeforeCreate(t *testing.T) {
 	user := model.TestUser(t)
 	assert.NoError(t, user.BeforeCreate())

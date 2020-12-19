@@ -7,8 +7,7 @@ import (
 	"testing"
 )
 
-
-//TestDB ...
+//TestDB test database connection and return test database and cleaning function.
 func TestDB(t *testing.T, databaseURL string) (*sql.DB, func(...string)) {
 	t.Helper()
 

@@ -34,7 +34,11 @@ Creation of migrations:
 
 Apply migrations:
 
-`$ migrate -database postgres://<user>:<password>@host:port/database -path migrations up`(without quotes)
+`$ migrate -database postgres://<user>:<password>@<host:port>/<database> -path migrations up`(without quotes)
+
+Drop migrations (in dirty migrate case):
+
+`$ migrate -database postgres://<user>:<password>@<host:port>/<database> -path migrations force <migrate_version(you can know it from title of migration 20201216144859_init.up)> up(or down)`
 
 You can find some development operations in deploy/setupDB.py file.
 

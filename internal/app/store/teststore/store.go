@@ -5,24 +5,41 @@ import (
 	"github.com/SKQR01/goblog/internal/app/store"
 )
 
-//Store ...
+// Store test store without db
 type Store struct {
 	userRepository *UserRepository
+	postRepository *PostRepository
 }
 
-//New ...
+// New ...
 func New() *Store {
 	return &Store{}
 }
 
-//User ...
-func (store *Store) User() store.UserRepository {
-	if store.userRepository != nil {
-		return store.userRepository
+// User ...
+func (s *Store) User() store.UserRepository {
+	if s.userRepository != nil {
+		return s.userRepository
 	}
-	store.userRepository = &UserRepository {
-		store: store,
+
+	s.userRepository = &UserRepository{
+		store: s,
 		users: make(map[int]*model.User),
 	}
-	return store.userRepository
+
+	return s.userRepository
+}
+
+// User ...
+func (s *Store) Post() store.PostRepository {
+	if s.postRepository != nil {
+		return s.postRepository
+	}
+
+	s.postRepository = &PostRepository{
+		store: s,
+		posts: make(map[int]*model.Post),
+	}
+
+	return s.postRepository
 }

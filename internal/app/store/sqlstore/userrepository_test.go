@@ -1,13 +1,16 @@
 package sqlstore_test
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/SKQR01/goblog/internal/app/model"
 	"github.com/SKQR01/goblog/internal/app/store"
 	"github.com/SKQR01/goblog/internal/app/store/sqlstore"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
+//TestUserRepository_Create test`s creating of users repository.
 func TestUserRepository_Create(t *testing.T) {
 	db, teardown := sqlstore.TestDB(t, databaseURL)
 	defer teardown("users")
@@ -18,6 +21,7 @@ func TestUserRepository_Create(t *testing.T) {
 	assert.NotNil(t, u.ID)
 }
 
+//TestUserRepository_Find tests user`s repository to find test user that was created erlier.
 func TestUserRepository_Find(t *testing.T) {
 	db, teardown := sqlstore.TestDB(t, databaseURL)
 	defer teardown("users")
@@ -30,6 +34,7 @@ func TestUserRepository_Find(t *testing.T) {
 	assert.NotNil(t, u2)
 }
 
+//TestUserRepository_FindByEmail tests user`s repository find by email function.
 func TestUserRepository_FindByEmail(t *testing.T) {
 	db, teardown := sqlstore.TestDB(t, databaseURL)
 	defer teardown("users")

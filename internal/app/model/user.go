@@ -6,14 +6,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-//User ...
+//User user model go implemetation.
 type User struct {
-	ID                int		`json:"id"`
-	Email             string	`json:"email"`
-	Password          string	`json:"password, omitempty"`
-	EncryptedPassword string	`json:"-"`
+	ID                int    `json:"id"`
+	Email             string `json:"email"`
+	Password          string `json:"password,omitempty"`
+	EncryptedPassword string `json:"-"`
 }
 
+//BeforeCreate encrypt user password if he is created.
 func (user *User) BeforeCreate() error {
 	if len(user.Password) > 0 {
 		enc, err := encryptString(user.Password)
@@ -25,12 +26,12 @@ func (user *User) BeforeCreate() error {
 	return nil
 }
 
-//Sanitaze ...
-func (user *User) Sanitaze()  {
+//Sanitaze clears user data, thats was recieved from database.
+func (user *User) Sanitaze() {
 	user.Password = ""
 }
 
-//Validate ...
+//Validate check for correctness of incoming user data.
 func (user *User) Validate() error {
 	return validation.ValidateStruct(
 		user,
@@ -47,6 +48,7 @@ func encryptString(s string) (string, error) {
 	return string(bcr), nil
 }
 
+//ComparePassword compares password and users password hash.
 func (user *User) ComparePassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(password)) == nil
 }

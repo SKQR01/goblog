@@ -1,5 +1,7 @@
 package apiserver
 
+//Physical realization of api server.
+
 import (
 	"database/sql"
 	"net/http"

@@ -2,16 +2,17 @@ package sqlstore
 
 import (
 	"database/sql"
+
 	"github.com/SKQR01/goblog/internal/app/model"
 	"github.com/SKQR01/goblog/internal/app/store"
 )
 
-//UserRepository ...
+//UserRepository user repository struct accept instance of store.
 type UserRepository struct {
 	store *Store
 }
 
-//Create ...
+//Create creates user.
 func (rep *UserRepository) Create(user *model.User) error {
 	if err := user.Validate(); err != nil {
 		return err
@@ -28,7 +29,7 @@ func (rep *UserRepository) Create(user *model.User) error {
 	).Scan(&user.ID)
 }
 
-//Find ...
+//Find finds user by id.
 func (rep *UserRepository) Find(id int) (*model.User, error) {
 	user := &model.User{}
 	if err := rep.store.db.QueryRow(
@@ -49,7 +50,7 @@ func (rep *UserRepository) Find(id int) (*model.User, error) {
 	return user, nil
 }
 
-//FindByEmail ...
+//FindByEmail finds user by email.
 func (rep *UserRepository) FindByEmail(email string) (*model.User, error) {
 	user := &model.User{}
 	if err := rep.store.db.QueryRow(

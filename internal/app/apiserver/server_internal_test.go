@@ -1,5 +1,7 @@
 package apiserver
 
+//Common testing of server.
+
 import (
 	"bytes"
 	"encoding/json"

@@ -9,7 +9,8 @@ import (
 	"github.com/SKQR01/goblog/internal/app/model"
 )
 
-func (srv *server) createPostHandler() http.HandlerFunc {
+func (srv *server) createWebsocketPostHandler() http.HandlerFunc {
+	//it`s not socket for a while
 	type request struct {
 		Title   string `json:"title"`
 		Content string `json:"content"`

@@ -11,5 +11,6 @@
             "database": "goblog",
             "username": "skqr"
         }
-    ]
+    ],
+    "go.inferGopath": false
 }

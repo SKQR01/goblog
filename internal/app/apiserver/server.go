@@ -22,16 +22,21 @@ type server struct {
 }
 
 func (srv *server) configureRouter() {
-	//TODO:если что смотреть здесь
+
 	srv.router.Use(srv.setRequestID)
-	srv.router.Use(srv.logRequest)
+	//TODO:logger conflicts with with websocket connetctions
+	// srv.router.Use(srv.logRequest)
 	srv.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 	srv.router.HandleFunc("/users", srv.handleUsersCreate()).Methods("POST")
 	srv.router.HandleFunc("/sessions", srv.handleUsersSessionsCreate()).Methods("POST")
 
+	srv.router.HandleFunc("/posts-feed", srv.websocketPostHandler())
+
 	private := srv.router.PathPrefix("/private").Subrouter()
 	private.Use(srv.authenticateUser)
 	private.HandleFunc("/home", srv.handleHome()).Methods("GET")
+	private.HandleFunc("/posts/create", srv.handlePostsCreate()).Methods("POST")
+	private.HandleFunc("/posts/remove", srv.handlePostsRemove()).Methods("POST")
 }
 
 func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

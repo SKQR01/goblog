@@ -18,6 +18,7 @@ import (
 	"github.com/SKQR01/goblog/internal/app/store/teststore"
 )
 
+//TestServer_AuthenticateUser ...
 func TestServer_AuthenticateUser(t *testing.T) {
 	store := teststore.New()
 	u := model.TestUser(t)
@@ -52,7 +53,9 @@ func TestServer_AuthenticateUser(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req, _ := http.NewRequest(http.MethodGet, "/", nil)
+
+			//here is your private rotues
+			req, _ := http.NewRequest(http.MethodGet, "/home", nil)
 			cookieStr, _ := sc.Encode(sessionName, tc.cookieValue)
 			req.Header.Set("Cookie", fmt.Sprintf("%s=%s", sessionName, cookieStr))
 			mw.ServeHTTP(rec, req)
@@ -61,6 +64,7 @@ func TestServer_AuthenticateUser(t *testing.T) {
 	}
 }
 
+//TestServer_HandleUsersCreate ...
 func TestServer_HandleUsersCreate(t *testing.T) {
 	s := newServer(teststore.New(), sessions.NewCookieStore([]byte("secret")))
 	testCases := []struct {
@@ -103,6 +107,7 @@ func TestServer_HandleUsersCreate(t *testing.T) {
 	}
 }
 
+//TestServer_HandleSessionsCreate ...
 func TestServer_HandleSessionsCreate(t *testing.T) {
 	store := teststore.New()
 	u := model.TestUser(t)
@@ -150,6 +155,49 @@ func TestServer_HandleSessionsCreate(t *testing.T) {
 			json.NewEncoder(b).Encode(tc.payload)
 			rec := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodPost, "/sessions", b)
+			s.ServeHTTP(rec, req)
+			assert.Equal(t, tc.expectedCode, rec.Code)
+		})
+	}
+}
+
+//TestServer_HandlePostsCreate ...
+func TestServer_HandlePostsCreate(t *testing.T) {
+	s := newServer(teststore.New(), sessions.NewCookieStore([]byte("secret")))
+	testCases := []struct {
+		name         string
+		payload      interface{}
+		expectedCode int
+	}{
+		{
+			name: "valid",
+			payload: map[string]interface{}{
+				"email":    "user@example.org",
+				"password": "secret",
+			},
+			expectedCode: http.StatusCreated,
+		},
+		{
+			name:         "invalid payload",
+			payload:      "invalid",
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name: "invalid params",
+			payload: map[string]interface{}{
+				"email":    "invalid",
+				"password": "short",
+			},
+			expectedCode: http.StatusUnprocessableEntity,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			b := &bytes.Buffer{}
+			json.NewEncoder(b).Encode(tc.payload)
+			rec := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodPost, "/users", b)
 			s.ServeHTTP(rec, req)
 			assert.Equal(t, tc.expectedCode, rec.Code)
 		})

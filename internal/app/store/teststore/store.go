@@ -30,7 +30,7 @@ func (s *Store) User() store.UserRepository {
 	return s.userRepository
 }
 
-// User ...
+// Post ...
 func (s *Store) Post() store.PostRepository {
 	if s.postRepository != nil {
 		return s.postRepository

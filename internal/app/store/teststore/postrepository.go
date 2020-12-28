@@ -33,6 +33,8 @@ func (r *PostRepository) Find(id int) (*model.Post, error) {
 	return p, nil
 }
 
+//TODO: finish it for test
+
 // Remove ...
 func (r *PostRepository) Remove(ids []int) error {
 	for _, id := range ids {
@@ -42,4 +44,9 @@ func (r *PostRepository) Remove(ids []int) error {
 	}
 
 	return nil
+}
+
+//GetRecords ...
+func (r *PostRepository) GetRecords(pageNum int, paginationSize int) ([]*model.Post, error) {
+	return []*model.Post{}, nil
 }

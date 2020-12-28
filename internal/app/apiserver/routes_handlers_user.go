@@ -29,6 +29,7 @@ func (srv *server) error(w http.ResponseWriter, r *http.Request, code int, err e
 }
 
 func (srv *server) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
+	//TODO: при создании постов ругается на это
 	w.WriteHeader(code)
 	if data != nil {
 		json.NewEncoder(w).Encode(data)
@@ -40,6 +41,7 @@ func (srv *server) handleUsersCreate() http.HandlerFunc {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &request{}
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
@@ -53,6 +55,7 @@ func (srv *server) handleUsersCreate() http.HandlerFunc {
 		}
 		if err := srv.store.User().Create(user); err != nil {
 			srv.error(w, r, http.StatusUnprocessableEntity, err)
+			return
 		}
 
 		user.Sanitaze()
@@ -97,38 +100,6 @@ func (srv *server) handleUsersSessionsCreate() http.HandlerFunc {
 
 func (srv *server) handleHome() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//TODO:непонятка тут
 		srv.respond(w, r, http.StatusOK, r.Context().Value(ctxKeyUser).(*model.User))
 	})
 }
-
-// func (srv *server) createPostHandler() http.HandlerFunc {
-// 	type request struct {
-// 		Title   string `json:"title"`
-// 		Content string `json:"content"`
-// 		OwnerID int    `json:"owner"`
-// 	}
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		req := &request{}
-// 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-// 			srv.error(w, r, http.StatusBadRequest, err)
-// 			return
-// 		}
-
-// 		post := &model.Post{
-// 			Title:   req.Title,
-// 			Content: req.Content,
-// 			OwnerID: req.OwnerID,
-// 		}
-
-// 		if err := srv.store.Post().Create(post); err != nil {
-// 			srv.respond(w, r, http.StatusInternalServerError, err)
-// 		}
-// 		srv.respond(w, r, http.StatusOK, nil)
-// 	}
-// }
-
-// func (srv *server) webSocketHandler() http.HandlerFunc {
-
-// }
-

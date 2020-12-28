@@ -13,9 +13,16 @@ func TestUser(t *testing.T) *User {
 
 //TestPost creates new test post instance.
 func TestPost(t *testing.T) *Post {
-	return &Post{
-		Title:   "someTitle",
-		Content: `{"data":123}`,
-		OwnerID: 1,
-	}
+	post := NewPost()
+
+	post.ID = 0
+	post.Title = "SomePost"
+	post.Content = "{\"data\":123}"
+
+	testUser := TestUser(t)
+	post.SetOwnerID(1)
+	post.Owner.Email = testUser.Email
+	post.Owner.Password = testUser.Password
+
+	return post
 }

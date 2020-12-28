@@ -21,18 +21,19 @@ func (rep *PostRepository) Create(post *model.Post) error {
 	}
 
 	return rep.store.db.QueryRow(
-		"INSERT INTO posts (title, content, owner) VALUES ($1, $2, $3) RETURNING id",
+		`WITH i AS (INSERT INTO posts (title, content, owner) VALUES ($1, $2, $3) RETURNING posts.id, posts.owner) 
+		SELECT i.id, u.email FROM i LEFT JOIN users u ON i.owner = u.id;`,
 		post.Title,
 		post.Content,
-		post.OwnerID,
-	).Scan(&post.ID)
+		post.GetOwnerID(),
+	).Scan(&post.ID, &post.Owner.Email)
 }
 
 //Find finds user by id.
 func (rep *PostRepository) Find(id int) (*model.Post, error) {
 	post := &model.Post{}
 	if err := rep.store.db.QueryRow(
-		"SELECT id, email, encrypted_password FROM users WHERE id = $1",
+		"SELECT id, title, content FROM posts WHERE id = $1",
 		id,
 	).Scan(
 		&post.ID,
@@ -56,4 +57,35 @@ func (rep *PostRepository) Remove(ids []int) error {
 	}
 
 	return nil
+}
+
+//GetRecords ...
+func (rep *PostRepository) GetRecords(pageNum int, paginationSize int) ([]*model.Post, error) {
+
+	posts := []*model.Post{}
+	singlePost := model.NewPost()
+
+	sqlPosts, err := rep.store.db.Query(
+		// "SELECT id, title, content, owner FROM posts ORDER BY id ASC OFFSET $1 LIMIT $2;",
+
+		"SELECT p.id, p.title, p.content, u.id, u.email FROM posts p LEFT JOIN users u ON p.owner = u.id ORDER BY p.id DESC OFFSET $1 LIMIT $2;",
+		pageNum*paginationSize,
+		paginationSize,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for sqlPosts.Next() {
+
+		if err := sqlPosts.Scan(&singlePost.ID, &singlePost.Title, &singlePost.Content, &singlePost.Owner.ID, &singlePost.Owner.Email); err != nil {
+			return nil, err
+		}
+		posts = append(posts, singlePost)
+
+		singlePost = model.NewPost()
+	}
+
+	return posts, nil
 }

@@ -118,7 +118,7 @@ func (srv *server) handlePostsRemove() http.HandlerFunc {
 			return
 		}
 
-		err = srv.store.Post().Remove(req.Ids)
+		err = srv.store.Post().Remove(req.Ids, r.Context().Value(ctxKeyUser).(*model.User).ID)
 		if err != nil {
 			srv.error(w, r, http.StatusUnprocessableEntity, err)
 			return

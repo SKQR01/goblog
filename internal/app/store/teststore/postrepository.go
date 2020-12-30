@@ -36,9 +36,9 @@ func (r *PostRepository) Find(id int) (*model.Post, error) {
 //TODO: finish it for test
 
 // Remove ...
-func (r *PostRepository) Remove(ids []int) error {
+func (r *PostRepository) Remove(ids []int, owner int) error {
 	for _, id := range ids {
-		if r.posts[id] != nil {
+		if r.posts[id] != nil && r.posts[id].GetOwnerID() == owner {
 			delete(r.posts, id)
 		}
 	}

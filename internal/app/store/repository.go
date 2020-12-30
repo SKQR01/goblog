@@ -13,8 +13,7 @@ type UserRepository interface {
 type PostRepository interface {
 	Create(*model.Post) error
 	Find(int) (*model.Post, error)
-	Remove([]int) error
+	Remove([]int, int) error
 	//page and pagination
-	// GetRecords(pageNum int, paginationSize int) ([]*model.Post, error)
 	GetRecords(pageNum int, paginationSize int) ([]*model.Post, error)
 }

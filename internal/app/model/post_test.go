@@ -58,6 +58,15 @@ func TestPost_Validate(t *testing.T) {
 			},
 			isValid: false,
 		},
+		{
+			name: "invalid json content",
+			post: func() *model.Post {
+				post := model.TestPost(t)
+				post.Content = "{123}"
+				return post
+			},
+			isValid: false,
+		},
 	}
 
 	for _, tc := range testCases {

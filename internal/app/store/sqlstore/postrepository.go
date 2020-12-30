@@ -51,8 +51,8 @@ func (rep *PostRepository) Find(id int) (*model.Post, error) {
 }
 
 //Remove removes post by ids.
-func (rep *PostRepository) Remove(ids []int) error {
-	if _, err := rep.store.db.Exec("DELETE FROM posts WHERE id = ANY($1);", pq.Array(ids)); err != nil {
+func (rep *PostRepository) Remove(ids []int, owner int) error {
+	if _, err := rep.store.db.Exec("DELETE FROM posts WHERE id = ANY($1) AND owner = $2;", pq.Array(ids), owner); err != nil {
 		return err
 	}
 

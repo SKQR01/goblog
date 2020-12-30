@@ -10,16 +10,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/SKQR01/goblog/internal/app/model"
+	"github.com/SKQR01/goblog/internal/app/store/teststore"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/SKQR01/goblog/internal/app/model"
-	"github.com/SKQR01/goblog/internal/app/store/teststore"
 )
 
-//TestServer_AuthenticateUser ...
-func TestServer_AuthenticateUser(t *testing.T) {
+
+func TestServerAuthenticateUser(t *testing.T) {
 	store := teststore.New()
 	u := model.TestUser(t)
 	store.User().Create(u)
@@ -64,8 +63,8 @@ func TestServer_AuthenticateUser(t *testing.T) {
 	}
 }
 
-//TestServer_HandleUsersCreate ...
-func TestServer_HandleUsersCreate(t *testing.T) {
+
+func TestServerHandleUsersCreate(t *testing.T) {
 	s := newServer(teststore.New(), sessions.NewCookieStore([]byte("secret")))
 	testCases := []struct {
 		name         string
@@ -107,8 +106,8 @@ func TestServer_HandleUsersCreate(t *testing.T) {
 	}
 }
 
-//TestServer_HandleSessionsCreate ...
-func TestServer_HandleSessionsCreate(t *testing.T) {
+//TestServerHandleSessionsCreate ...
+func TestServerHandleSessionsCreate(t *testing.T) {
 	store := teststore.New()
 	u := model.TestUser(t)
 	store.User().Create(u)
@@ -155,49 +154,6 @@ func TestServer_HandleSessionsCreate(t *testing.T) {
 			json.NewEncoder(b).Encode(tc.payload)
 			rec := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodPost, "/sessions", b)
-			s.ServeHTTP(rec, req)
-			assert.Equal(t, tc.expectedCode, rec.Code)
-		})
-	}
-}
-
-//TestServer_HandlePostsCreate ...
-func TestServer_HandlePostsCreate(t *testing.T) {
-	s := newServer(teststore.New(), sessions.NewCookieStore([]byte("secret")))
-	testCases := []struct {
-		name         string
-		payload      interface{}
-		expectedCode int
-	}{
-		{
-			name: "valid",
-			payload: map[string]interface{}{
-				"email":    "user@example.org",
-				"password": "secret",
-			},
-			expectedCode: http.StatusCreated,
-		},
-		{
-			name:         "invalid payload",
-			payload:      "invalid",
-			expectedCode: http.StatusBadRequest,
-		},
-		{
-			name: "invalid params",
-			payload: map[string]interface{}{
-				"email":    "invalid",
-				"password": "short",
-			},
-			expectedCode: http.StatusUnprocessableEntity,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			b := &bytes.Buffer{}
-			json.NewEncoder(b).Encode(tc.payload)
-			rec := httptest.NewRecorder()
-			req, _ := http.NewRequest(http.MethodPost, "/users", b)
 			s.ServeHTTP(rec, req)
 			assert.Equal(t, tc.expectedCode, rec.Code)
 		})

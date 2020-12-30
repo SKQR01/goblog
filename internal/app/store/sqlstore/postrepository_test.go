@@ -52,7 +52,7 @@ func TestPostRepository_Remove(t *testing.T) {
 		s.Post().Create(p)
 		ids = append(ids, i)
 	}
-	assert.NoError(t, s.Post().Remove(ids))
+	assert.NoError(t, s.Post().Remove(ids, u.ID))
 }
 
 func TestPostRepository_GetRecords(t *testing.T) {

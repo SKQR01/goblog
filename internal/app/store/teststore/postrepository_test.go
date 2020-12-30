@@ -37,5 +37,5 @@ func TestPostRepository_Remove(t *testing.T) {
 		removeIds = append(removeIds, post.ID)
 	}
 
-	assert.NoError(t, s.Post().Remove(removeIds))
+	assert.NoError(t, s.Post().Remove(removeIds, posts[0].GetOwnerID()))
 }

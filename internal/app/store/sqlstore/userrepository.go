@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/SKQR01/goblog/internal/app/model"
 	"github.com/SKQR01/goblog/internal/app/store"
@@ -22,8 +23,19 @@ func (rep *UserRepository) Create(user *model.User) error {
 		return err
 	}
 
+	existingUserRow, err := rep.store.db.Query("SELECT id FROM users WHERE email=$1;", user.Email)
+	if err != nil {
+		return err
+	}
+	//check, exists user or not
+	if existingUserRow.Next() || existingUserRow.NextResultSet() {
+		//error starts with capital because user must see normal sentence
+		return fmt.Errorf("Аккаунт на почту %v уже зарегистрирован.", user.Email)
+	}
 	return rep.store.db.QueryRow(
-		"INSERT INTO users (email, encrypted_password) VALUES ($1, $2) RETURNING id",
+		`
+		INSERT INTO users (email, encrypted_password) VALUES ($1, $2) RETURNING id;
+		`,
 		user.Email,
 		user.EncryptedPassword,
 	).Scan(&user.ID)

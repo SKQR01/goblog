@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/lib/pq"
 
@@ -31,14 +32,16 @@ func (rep *PostRepository) Create(post *model.Post) error {
 
 //Find finds user by id.
 func (rep *PostRepository) Find(id int) (*model.Post, error) {
-	post := &model.Post{}
+	post := model.NewPost()
 	if err := rep.store.db.QueryRow(
-		"SELECT id, title, content FROM posts WHERE id = $1",
+		"SELECT p.id, p.title, p.content, u.id, u.email FROM posts p LEFT JOIN users u ON p.owner = u.id WHERE p.id = $1",
 		id,
 	).Scan(
 		&post.ID,
 		&post.Title,
 		&post.Content,
+		&post.Owner.ID,
+		&post.Owner.Email,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, store.ErrRecordNotFound
@@ -60,32 +63,34 @@ func (rep *PostRepository) Remove(ids []int, owner int) error {
 }
 
 //GetRecords ...
-func (rep *PostRepository) GetRecords(pageNum int, paginationSize int) ([]*model.Post, error) {
+func (rep *PostRepository) GetRecords(pageNum int, paginationSize int, userID int) ([]*model.Post, error) {
+	byUserID := ""
+	if userID >= 0 {
+		byUserID = fmt.Sprintf("WHERE owner=%d", userID)
+	}
 
 	posts := []*model.Post{}
 	singlePost := model.NewPost()
 
-	sqlPosts, err := rep.store.db.Query(
-		// "SELECT id, title, content, owner FROM posts ORDER BY id ASC OFFSET $1 LIMIT $2;",
+	query := fmt.Sprintf("SELECT p.id, p.title, u.id, u.email FROM posts p LEFT JOIN users u ON p.owner = u.id  %s ORDER BY p.id DESC OFFSET $1 LIMIT $2;", byUserID)
 
-		"SELECT p.id, p.title, p.content, u.id, u.email FROM posts p LEFT JOIN users u ON p.owner = u.id ORDER BY p.id DESC OFFSET $1 LIMIT $2;",
-		pageNum*paginationSize,
+	sqlPosts, err := rep.store.db.Query(
+		// "SELECT p.id, p.title, u.id, u.email FROM posts p LEFT JOIN users u ON p.owner = u.id ORDER BY p.id DESC OFFSET $1 LIMIT $2;",
+		query,
+		(pageNum-1)*paginationSize,
 		paginationSize,
 	)
-
 	if err != nil {
 		return nil, err
 	}
 
-	for sqlPosts.Next() {
-
-		if err := sqlPosts.Scan(&singlePost.ID, &singlePost.Title, &singlePost.Content, &singlePost.Owner.ID, &singlePost.Owner.Email); err != nil {
+	for sqlPosts.Next() != false {
+		if err := sqlPosts.Scan(&singlePost.ID, &singlePost.Title, &singlePost.Owner.ID, &singlePost.Owner.Email); err != nil {
 			return nil, err
 		}
 		posts = append(posts, singlePost)
-
 		singlePost = model.NewPost()
 	}
-
+	sqlPosts.Close()
 	return posts, nil
 }

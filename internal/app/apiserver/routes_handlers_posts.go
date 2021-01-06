@@ -6,17 +6,25 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/SKQR01/goblog/internal/app/model"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
-var postsMessageChannel chan []byte = make(chan []byte, 1024)
-var postsPaginationMessageChannel chan []byte = make(chan []byte, 1024)
-
 // ------------------------------------Data types------------------------------------
 // ----------------------------------------------------------------------------------
+
+var (
+	createMethod     string = "CREATE"
+	removeMethod     string = "REMOVE"
+	editMethod       string = "EDIT"
+	errorMethod      string = "ERROR"
+	paginationMethod string = "PAGINATION"
+)
+
 type postsPaginationMessage struct {
 	PageNumber     int `json:"pageNumber"`
 	PaginationSize int `json:"paginationSize"`
@@ -32,23 +40,10 @@ func (m *postsPaginationMessage) Validate() error {
 
 type postsMessage struct {
 	Method string
-	Data   *model.Post
+	Data   interface{}
 }
 
-func (m *postsMessage) Validate() error {
-	return validation.ValidateStruct(
-		m,
-		validation.Field(&m.Method, validation.Required),
-		validation.Field(&m.Data, validation.Required),
-	)
-}
-
-var (
-	createMethod string = "CREATE"
-	//On frontend I`ll use ReactJS, because in this case this method is unnecessary, but it can be useful in some other cases.
-	removeMethod string = "REMOVE"
-	editMethod   string = "EDIT"
-)
+//Posts websocket view conn, home posts view, improve get records and find commands, secure connection, auth
 
 // ----------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------
@@ -56,18 +51,41 @@ var (
 // -----------------------------------------Handlers and helpers-----------------------------------------
 // ------------------------------------------------------------------------------------------------------
 
-func writeMessage(post *model.Post, method string) {
+func (srv *server) handleGetUserPosts() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rangeMessage := &postsPaginationMessage{
+			PageNumber:     1,
+			PaginationSize: 10,
+		}
+		keys := r.URL.Query()
 
-	encodedPostsMessage, err := json.Marshal(post)
+		if keys["pageNumber"] != nil {
+			pageNumber, err := strconv.Atoi(keys["pageNumber"][0])
+			if err == nil {
+				rangeMessage.PageNumber = pageNumber
+			}
+		}
 
-	if err != nil {
-		log.Println(err)
-		return
+		if keys["paginationSize"] != nil {
+			paginationSize, err := strconv.Atoi(keys["paginationSize"][0])
+			if err == nil {
+				rangeMessage.PaginationSize = paginationSize
+			}
+		}
+
+		records, err := srv.store.Post().GetRecords(rangeMessage.PageNumber,
+			rangeMessage.PaginationSize,
+			r.Context().Value(ctxKeyUser).(*model.User).ID,
+		)
+		if err != nil {
+			srv.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		srv.respond(w, r, http.StatusOK, records)
 	}
-	postsMessageChannel <- encodedPostsMessage
 }
 
-func (srv *server) handlePostsCreate() http.HandlerFunc {
+func (srv *server) handlePostsCreate(hub *Hub) http.HandlerFunc {
 	type request struct {
 		Title   string `json:"title"`
 		Content string `json:"content"`
@@ -96,13 +114,39 @@ func (srv *server) handlePostsCreate() http.HandlerFunc {
 			return
 		}
 
-		go writeMessage(post, createMethod)
+		//send message to hub (to make users possible to see changes)
+		chanMessage := &postsMessage{
+			Method: createMethod,
+			Data:   post,
+		}
+
+		encodedChanMessage, _ := json.Marshal(chanMessage)
+
+		hub.broadcast <- encodedChanMessage
 
 		srv.respond(w, r, http.StatusCreated, post)
 	}
 }
 
-func (srv *server) handlePostsRemove() http.HandlerFunc {
+func (srv *server) handlePostDetailView() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		id, err := strconv.Atoi(vars["id"])
+		if err != nil {
+			srv.error(w, r, http.StatusUnprocessableEntity, err)
+			return
+		}
+
+		post, err := srv.store.Post().Find(id)
+		if err != nil {
+			srv.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		srv.respond(w, r, http.StatusOK, post)
+	}
+}
+
+func (srv *server) handlePostsRemove(hub *Hub) http.HandlerFunc {
 	type request struct {
 		Ids []int `json:"postsToRemoveIds"`
 	}
@@ -124,6 +168,16 @@ func (srv *server) handlePostsRemove() http.HandlerFunc {
 			return
 		}
 
+		//send message to hub (to make users possible to see changes)
+		chanMessage := &postsMessage{
+			Method: removeMethod,
+			Data:   req.Ids,
+		}
+
+		encodedChanMessage, _ := json.Marshal(chanMessage)
+
+		hub.broadcast <- encodedChanMessage
+
 		srv.respond(w, r, http.StatusOK, req.Ids)
 	}
 }
@@ -133,76 +187,30 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func (srv *server) websocketPostHandler() http.HandlerFunc {
+func (srv *server) websocketPostHandler(hub *Hub) http.HandlerFunc {
 
 	return func(rw http.ResponseWriter, r *http.Request) {
 
+		go hub.run()
+
 		upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 
-		ws, err := upgrader.Upgrade(rw, r, nil)
+		conn, err := upgrader.Upgrade(rw, r, nil)
 
 		if err != nil {
+			log.Println(err)
 			return
 		}
 
-		go func() {
-			for {
-				rangeMessage := &postsPaginationMessage{
-					PageNumber:     1,
-					PaginationSize: 10,
-				}
+		client := &Client{
+			hub:  hub,
+			conn: conn,
+			send: make(chan []byte, 256),
+		}
+		client.hub.register <- client
 
-				//Guarantee of valid
-				if err := ws.ReadJSON(rangeMessage); err != nil {
-					log.Println(err.Error())
-					ws.WriteJSON(err)
-					continue
-				}
-
-				if err := rangeMessage.Validate(); err != nil {
-					log.Println(err.Error())
-					ws.WriteJSON(err)
-					continue
-				}
-
-				encodedRangeMessage, err := json.Marshal(rangeMessage)
-				if err != nil {
-					ws.WriteJSON(err)
-					continue
-				}
-
-				postsPaginationMessageChannel <- encodedRangeMessage
-			}
-		}()
-
-		go func() {
-			for {
-				rangeMessage := <-postsPaginationMessageChannel
-				decodedRangeMessage := &postsPaginationMessage{}
-
-				if err := json.Unmarshal(rangeMessage, &decodedRangeMessage); err != nil {
-					ws.WriteJSON(err)
-					continue
-				}
-				records, err := srv.store.Post().GetRecords(decodedRangeMessage.PageNumber, decodedRangeMessage.PaginationSize)
-				if err != nil {
-					ws.WriteJSON(err)
-					continue
-				}
-
-				ws.WriteJSON(&records)
-			}
-		}()
-		go func() {
-			for {
-				chanMessage := &postsMessage{}
-				if err := json.Unmarshal(<-postsMessageChannel, &chanMessage); err != nil {
-					ws.WriteJSON(err)
-					continue
-				}
-				ws.WriteJSON(chanMessage)
-			}
-		}()
+		go client.writePump()
+		go client.readPump(srv)
 	}
 }
 

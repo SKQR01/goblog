@@ -14,6 +14,6 @@ type PostRepository interface {
 	Create(*model.Post) error
 	Find(int) (*model.Post, error)
 	Remove([]int, int) error
-	//page and pagination
-	GetRecords(pageNum int, paginationSize int) ([]*model.Post, error)
+	//userID must be null or greater to include it to the query.
+	GetRecords(pageNum int, paginationSize int, userID int) ([]*model.Post, error)
 }

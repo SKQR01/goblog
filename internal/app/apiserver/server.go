@@ -22,21 +22,45 @@ type server struct {
 }
 
 func (srv *server) configureRouter() {
+	hub := newHub()
 
 	srv.router.Use(srv.setRequestID)
 	//TODO:logger conflicts with with websocket connetctions
 	// srv.router.Use(srv.logRequest)
-	srv.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
-	srv.router.HandleFunc("/users", srv.handleUsersCreate()).Methods("POST")
-	srv.router.HandleFunc("/sessions", srv.handleUsersSessionsCreate()).Methods("POST")
 
-	srv.router.HandleFunc("/posts-feed", srv.websocketPostHandler())
+	headersOK := []string{"Accept", "Access-Control-Allow-Credentials",
+		"Access-Control-Allow-Origin",
+		"Access-Control-Allow-Headers",
+		"X-Requested-With",
+		"Content-Type",
+		"Content-Length",
+		"Accept-Encoding",
+		"Authorization",
+		"Set-Cookie",
+		"Content-Length",
+	}
+	originsOK := []string{"https://localhost:3000"}
+
+	srv.router.Use(
+		handlers.CORS(
+			handlers.AllowCredentials(),
+			handlers.AllowedHeaders(headersOK),
+			handlers.AllowedOrigins(originsOK),
+		))
+		
+	srv.router.Handle("/users", srv.handleUsersCreate()).Methods("POST", "OPTIONS")
+	srv.router.HandleFunc("/sessions", srv.handleUsersSessionsCreate()).Methods("POST", "OPTIONS")
+
+	srv.router.HandleFunc("/posts-feed", srv.websocketPostHandler(hub))
+	srv.router.HandleFunc("/posts/{id:[0-9]+}", srv.handlePostDetailView()).Methods("GET", "OPTIONS")
 
 	private := srv.router.PathPrefix("/private").Subrouter()
 	private.Use(srv.authenticateUser)
-	private.HandleFunc("/home", srv.handleHome()).Methods("GET")
-	private.HandleFunc("/posts/create", srv.handlePostsCreate()).Methods("POST")
-	private.HandleFunc("/posts/remove", srv.handlePostsRemove()).Methods("POST")
+	private.HandleFunc("/home", srv.handleHome()).Methods("GET", "OPTIONS")
+	private.HandleFunc("/home/posts", srv.handleGetUserPosts()).Methods("GET", "OPTIONS")
+	private.HandleFunc("/sessions/logout", srv.handleUsersSessionsRemove()).Methods("POST", "OPTIONS")
+	private.HandleFunc("/posts/create", srv.handlePostsCreate(hub)).Methods("POST", "OPTIONS")
+	private.HandleFunc("/posts/remove", srv.handlePostsRemove(hub)).Methods("POST", "OPTIONS")
 }
 
 func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

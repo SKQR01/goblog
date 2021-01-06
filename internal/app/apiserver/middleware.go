@@ -17,7 +17,7 @@ func (srv *server) authenticateUser(next http.Handler) http.Handler {
 		}
 
 		id, ok := session.Values["user_id"]
-		if !ok {
+		if !ok || &id == nil  {
 			srv.error(w, r, http.StatusUnauthorized, errNotAuth)
 			return
 		}

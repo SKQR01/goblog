@@ -47,6 +47,6 @@ func (r *PostRepository) Remove(ids []int, owner int) error {
 }
 
 //GetRecords ...
-func (r *PostRepository) GetRecords(pageNum int, paginationSize int) ([]*model.Post, error) {
+func (r *PostRepository) GetRecords(pageNum int, paginationSize int, userID int) ([]*model.Post, error) {
 	return []*model.Post{}, nil
 }

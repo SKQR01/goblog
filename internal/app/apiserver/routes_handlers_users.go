@@ -24,7 +24,6 @@ var (
 )
 
 func (srv *server) error(w http.ResponseWriter, r *http.Request, code int, err error) {
-	//TODO:глянуть тут
 	srv.respond(w, r, code, map[string]string{"error": err.Error()})
 }
 
@@ -94,6 +93,22 @@ func (srv *server) handleUsersSessionsCreate() http.HandlerFunc {
 			return
 		}
 
+		srv.respond(w, r, http.StatusOK, req)
+	}
+}
+
+func (srv *server) handleUsersSessionsRemove() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		session, err := srv.sessionStore.Get(r, sessionName)
+		if err != nil {
+			srv.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		session.Options.MaxAge = -1
+		if err := srv.sessionStore.Save(r, w, session); err != nil {
+			srv.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
 		srv.respond(w, r, http.StatusOK, nil)
 	}
 }

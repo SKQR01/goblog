@@ -22,9 +22,16 @@ func Start(config *Config) error {
 
 	store := sqlstore.New(db)
 	sessionStore := sessions.NewCookieStore([]byte(config.SessionKey))
+	sessionStore.Options.HttpOnly = true
+	sessionStore.Options.SameSite = http.SameSite(http.SameSiteNoneMode)
+	sessionStore.Options.Secure = true
+
 	srv := newServer(store, sessionStore)
 
-	return http.ListenAndServe(config.BindAddr, srv)
+	
+	srv.logger.Println("Starting server...")
+	//for https (requires ssl)
+	return http.ListenAndServeTLS(config.BindAddr, "certs/localhost.pem", "certs/localhost-key.pem", srv)
 }
 
 func newDB(databasURL string) (*sql.DB, error) {

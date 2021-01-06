@@ -71,6 +71,6 @@ func TestPostRepository_GetRecords(t *testing.T) {
 		ids = append(ids, i)
 	}
 
-	_, err := s.Post().GetRecords(1, 20)
+	_, err := s.Post().GetRecords(1, 20, -1)
 	assert.NoError(t, err)
 }

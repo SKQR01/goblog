@@ -2,14 +2,14 @@ package apiserver
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 func (srv *server) authenticateUser(next http.Handler) http.Handler {
-	//TODO: понять, как работает
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := srv.sessionStore.Get(r, sessionName)
 		if err != nil {
@@ -17,7 +17,7 @@ func (srv *server) authenticateUser(next http.Handler) http.Handler {
 		}
 
 		id, ok := session.Values["user_id"]
-		if !ok {
+		if !ok || &id == nil  {
 			srv.error(w, r, http.StatusUnauthorized, errNotAuth)
 			return
 		}
@@ -40,6 +40,7 @@ func (srv *server) setRequestID(next http.Handler) http.Handler {
 	})
 }
 
+//TODO: fix websocket: response does not implement http.Hijacker
 func (srv *server) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := srv.logger.WithFields(logrus.Fields{

@@ -1,3 +1,16 @@
 {
-    "compile-hero.disable-compile-files-on-did-save-code": false
+    "compile-hero.disable-compile-files-on-did-save-code": false,
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "askForPassword": true,
+            "driver": "PostgreSQL",
+            "name": "goblog",
+            "database": "goblog",
+            "username": "skqr"
+        }
+    ],
+    "go.inferGopath": false
 }

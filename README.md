@@ -34,16 +34,24 @@ Creation of migrations:
 
 Apply migrations:
 
-`$ migrate -database postgres://<user>:<password>@host:port/database -path migrations up`(without quotes)
+`$ migrate -database postgres://<user>:<password>@<host:port>/<database> -path migrations up`(without quotes)
+
+Drop migrations (in dirty migrate case):
+
+`$ migrate -database postgres://<user>:<password>@<host:port>/<database> -path migrations force <migrate_version(you can know it from title of migration 20201216144859_init.up)> up(or down)`
 
 You can find some development operations in deploy/setupDB.py file.
 
+# SSL for localhost
 
+Get, unpack, compile, add to PATH <- - - https://github.com/FiloSottile/mkcert
+
+Then generate SSL certs for your site (localhost and 127.0.0.1 not the same one) and put it in `certs` folder.
 
 # Nginx setting up.
 
 ```bash
-sudo apt-get install nginx nginx-common nginx-full
+sudo apt install nginx nginx-common nginx-full
 ```
 
 
@@ -53,11 +61,7 @@ sudo apt-key add nginx_signing.key
 ```
 
 ```bash
-sudo apt-get update
-```
-
-```bash
-sudo apt-get install nginx
+sudo apt update
 ```
 
 ```bash
@@ -75,10 +79,18 @@ http {
         listen 8080; #port of your future website
         location / { #proxy for... (to go to the site you need to go to the next url <your_ip_adress>:8080)
             proxy_pass http://127.0.0.1:8181; #url of your backend server (port must not matche with listen port)
+            root /data/www;#root of data or server
         }
     }
 }
 ```
+
+```bash
+#add to autoload
+sudo systemctl enable nginx
+```
+
+https://losst.ru/nastrojka-virtualnyh-hostov-nginx (RU)
 
 
 
